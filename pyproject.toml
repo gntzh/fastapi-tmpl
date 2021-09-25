@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "fastapi-admin-tmpl"
+version = "0.1.0"
+description = ""
+authors = ["Grant Zhang <grant.zhang.s@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.68.1"
+pydantic = "^1.8.2"
+uvicorn = "^0.15.0"
+sqlalchemy = "^1.4.25"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^0.910"
+black = "^21.9-beta.0"
+isort = "^5.9.3"
+flake8 = "^3.9.2"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^6.2.5"
+
+[tool.black]
+
+[tool.isort]
+profile = "black"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+[tool.mypy]
