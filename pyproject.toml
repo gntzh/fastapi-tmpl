@@ -9,9 +9,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.68.1"
-pydantic = "^1.8.2"
+pydantic = {version = "^1.8.2", extras = ["dotenv", "email"]}
 uvicorn = "^0.15.0"
-sqlalchemy = "^1.4.25"
+sqlalchemy = {version = "^1.4.25", extras = ["asyncio"]}
+asyncpg = "^0.24.0"
+alembic = "^1.7.3"
+passlib = {version = "^1.7.4", extras = ["bcrypt"]}
+python-jose = {version = "^3.3.0", extras = ["cryptography"]}
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^0.910"
