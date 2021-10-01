@@ -16,6 +16,7 @@ asyncpg = "^0.24.0"
 alembic = "^1.7.3"
 passlib = {version = "^1.7.4", extras = ["bcrypt"]}
 python-jose = {version = "^3.3.0", extras = ["cryptography"]}
+python-multipart = "^0.0.5"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^0.910"
