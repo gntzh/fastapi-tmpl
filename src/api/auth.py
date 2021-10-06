@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -43,4 +43,32 @@ async def token(
         "access_token": security.create_access_token(user.id),
         "refresh_token": security.create_refresh_token(user.id),
         "token_type": "bearer",
+    }
+
+
+@router.post("/token/refresh")
+async def refresh_token(
+    refresh_token: str = Body(...),
+    token_type: str = Body("bearer"),
+    db: AsyncSession = Depends(deps.get_db_session),
+) -> Any:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if token_type.lower() != "bearer":
+        raise credentials_exception
+    try:
+        payload = security.decode_refresh_token(refresh_token)
+    except ValueError:
+        raise credentials_exception
+
+    async with db.begin():
+        user = await user_repo.get(db, id=payload.user_id)
+    if user is None:
+        raise credentials_exception
+    return {
+        "token_type": "bearer",
+        "access_token": security.create_access_token(payload.user_id),
     }
