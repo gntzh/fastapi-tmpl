@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseSettings
+from pydantic import AnyHttpUrl, BaseSettings
 
 BASE_DIR: Path = Path(__file__).resolve(strict=True).parent.parent.parent
 
@@ -8,6 +8,7 @@ BASE_DIR: Path = Path(__file__).resolve(strict=True).parent.parent.parent
 class Settings(BaseSettings):
     BASE_DIR = BASE_DIR
     SQLALCHEMY_DATABASE_URI: str
+    CORS_ALLOWED_ORIGINS: list[AnyHttpUrl]
 
     JWT_ALGORITHM = "HS256"
     SIGNING_KEY: str

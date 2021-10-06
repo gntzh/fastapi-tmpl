@@ -1,11 +1,18 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from src.infra.db_session import engine
 from src.api.router import router
+from src.config import settings
+from src.infra.db_session import engine
 
 app = FastAPI(title="FastAPI Admin Template")
 
-app.on_event("on")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("shutdown")
