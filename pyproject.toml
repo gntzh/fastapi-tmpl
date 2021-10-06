@@ -9,13 +9,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.68.1"
-pydantic = {version = "^1.8.2", extras = ["dotenv", "email"]}
+pydantic = { version = "^1.8.2", extras = ["dotenv", "email"] }
 uvicorn = "^0.15.0"
-sqlalchemy = {version = "^1.4.25", extras = ["asyncio"]}
+sqlalchemy = { version = "^1.4.25", extras = ["asyncio"] }
 asyncpg = "^0.24.0"
 alembic = "^1.7.3"
-passlib = {version = "^1.7.4", extras = ["bcrypt"]}
-python-jose = {version = "^3.3.0", extras = ["cryptography"]}
+passlib = { version = "^1.7.4", extras = ["bcrypt"] }
+python-jose = { version = "^3.3.0", extras = ["cryptography"] }
 python-multipart = "^0.0.5"
 
 [tool.poetry.group.dev.dependencies]
@@ -26,6 +26,9 @@ flake8 = "^3.9.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^6.2.5"
+
+[tool.mypy]
+plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
 
 [tool.black]
 
@@ -40,5 +43,3 @@ url = "https://mirrors.aliyun.com/pypi/simple/"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-[tool.mypy]
-plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]

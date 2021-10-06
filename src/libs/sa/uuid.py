@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING, Optional, Union
-from sqlalchemy import types
-from sqlalchemy import dialects
 import uuid
+from typing import TYPE_CHECKING, Optional, Union
+
+from sqlalchemy import dialects, types
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Dialect
