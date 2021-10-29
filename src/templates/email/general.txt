@@ -1,0 +1,11 @@
+{{ title }}
+
+{{ message|join('\n\n') }}
+{%- if cta_link and cta_text %}
+
+{{ cta_text }}: {{ cta_link }}
+{%- endif -%}
+{% if secondary_message %}
+
+{{ secondary_message|join('\n\n') }}
+{%- endif -%}

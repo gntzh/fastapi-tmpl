@@ -1,0 +1,46 @@
+<mj-section>
+  <mj-column>
+    <mj-text font-weight="300" font-size="28px" line-height="24px" padding-bottom="20px">{{ title }}</mj-text>
+    <mj-raw>
+      {%- if greeting -%}
+    </mj-raw>
+    <mj-text font-size="20px">{{ greeting }}</mj-text>
+    <mj-raw>
+      {%- endif -%}
+    </mj-raw>
+    <mj-raw>
+      {%- for para in message -%}
+    </mj-raw>
+    <mj-text>{{ para }}</mj-text>
+    <mj-raw>
+      {%- endfor -%}
+    </mj-raw>
+    <mj-raw>
+      {%- if cta_link and cta_text -%}
+    </mj-raw>
+    <mj-button padding="32px 0px" href="{{ cta_link }}" background-color="#175ddc" color="white" font-weight="500">{{ cta_text }}</mj-button>
+    <mj-raw>
+      {%- endif -%}
+    </mj-raw>
+    <mj-raw>
+      {%- if secondary_message -%}
+      {%- for para in secondary_message -%}
+    </mj-raw>
+    <mj-text>{{ para }}</mj-text>
+    <mj-raw>
+      {%- endfor -%}
+      {%- endif -%}
+    </mj-raw>
+    <mj-raw>
+      {%- if cta_link and cta_text -%}
+    </mj-raw>
+    <mj-spacer height="20px" />
+    <mj-text mj-class="secondary-text">If the button above does not appear, please copy and paste this link
+      into your browser's address bar:
+    </mj-text>
+    <mj-text mj-class="secondary-text">{{ cta_link }}</mj-text>
+    <mj-raw>
+      {%- endif -%}
+    </mj-raw>
+  </mj-column>
+</mj-section>

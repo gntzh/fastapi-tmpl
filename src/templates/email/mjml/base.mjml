@@ -1,0 +1,27 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all color="#5D6879" font-family="Montserrat, Helvetica, Arial, sans-serif" font-size="16px"></mj-all>
+      <mj-section padding="0px"></mj-section>
+      <mj-text padding="10px 16px"></mj-text>
+      <mj-class name="secondary-text" font-size="12px" />
+    </mj-attributes>
+    <mj-style>
+      .header td {
+        padding: 20px 16px;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#E4E8EE">
+    <mj-section css-class="header" full-width="full-width" background-color="#1E2530">
+      <mj-column>
+        <mj-text color="white" font-size="32px" padding="0px">{{ project_name }}</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section padding-top="32px" />
+    <mj-wrapper background-color="white" padding="32px 0px">
+      <!-- <mj-include path="./general.mjml" /> -->
+    </mj-wrapper>
+    <mj-section padding-top="48px" />
+  </mj-body>
+</mjml>
