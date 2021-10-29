@@ -15,6 +15,7 @@ class User(Base):
     username = Column(types.String, nullable=False, unique=True, index=True)
     password = Column(types.String, default=None)
     email = Column(types.String, default=None, unique=True, index=True)
+    email_verified = Column(types.Boolean, default=False, nullable=False)
     is_active = Column(types.Boolean, default=True, nullable=False)
     date_joined = Column(TZDateTime, default=utcnow)
     is_superuser = Column(types.Boolean, default=False)
