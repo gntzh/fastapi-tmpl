@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Body, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -72,3 +72,18 @@ async def refresh_token(
         "token_type": "bearer",
         "access_token": security.create_access_token(payload.user_id),
     }
+
+
+@router.put("/password")
+async def change_password(
+    data: schemas.ChangePasswordData,
+    current_user: User = Depends(deps.get_current_user),
+    session: AsyncSession = Depends(deps.get_db_session),
+) -> Any:
+    if not current_user.verify_password(data.old_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password"
+        )
+    async with session.begin():
+        current_user.set_password(data.new_password)
+    return {"msg": "Password changed"}
