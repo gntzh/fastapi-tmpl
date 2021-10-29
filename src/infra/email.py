@@ -5,6 +5,7 @@ import aiosmtplib
 from jinja2 import Environment, FileSystemLoader
 
 from src.config import settings
+from src.infra.security import create_recovery_token, create_verify_email_token
 
 env = Environment(
     loader=FileSystemLoader(settings.BASE_DIR / "src/templates/email"), autoescape=True
@@ -46,4 +47,44 @@ async def send_general_email(
         password=settings.EMAIL_PASSWORD,
         use_tls=settings.EMAIL_USE_TLS,
         start_tls=settings.EMAIL_USE_STARTTLS,
+    )
+
+
+async def send_recovery_email(email: str) -> None:
+    project_name = settings.PROJECT_NAME
+    token = create_recovery_token(email)
+    link = f"{settings.RECOVERY_CALLBACK_URL}?token={token}"
+    await send_general_email(
+        email,
+        subject=f"[{project_name}] Recover account",
+        title="Recover your account",
+        greeting="Hi,",
+        message=[f"We got a request to recover your {project_name} account."],
+        cta_link=link,
+        cta_text="Reset password",
+        secondary_message=[
+            "If you ignore this message, your password won't be changed.",
+            "If you didn't request a password reset, let us know.",
+        ],
+    )
+
+
+async def send_verify_email(email: str) -> None:
+    project_name = settings.PROJECT_NAME
+    token = create_verify_email_token(email)
+    link = f"{settings.VERIFY_EMAIL_CALLBACK_URL}?token={token}"
+    await send_general_email(
+        email,
+        subject=f"[{project_name}] Verify Your Email",
+        title="Verify your email address",
+        greeting="Hi,",
+        message=[
+            f"To secure your {project_name} account, we just need to "
+            f"verify your email address: {email}."
+        ],
+        cta_link=link,
+        cta_text="Verify Email",
+        secondary_message=[
+            "If you did not request this, you can simply ignore this message."
+        ],
     )
