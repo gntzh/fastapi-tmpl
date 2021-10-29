@@ -122,3 +122,41 @@ async def confirm_email_verification(
             return {"msg": "Email already verified"}
         user.email_verified = True
     return {"msg": "Email verified"}
+
+
+@router.post("/recovery")
+async def recover_account(
+    data: schemas.RecoverPasswordData,
+    session: AsyncSession = Depends(deps.get_db_session),
+) -> Any:
+    user = await user_repo.get_by_email(session, email=data.email)
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="That email address is not registered",
+        )
+    await email.send_recovery_email(user.email)
+    return {"msg": "Recovery email sent"}
+
+
+@router.post("/password/reset")
+async def reset_password(
+    data: schemas.ResetPasswordData,
+    session: AsyncSession = Depends(deps.get_db_session),
+) -> Any:
+    try:
+        payload = security.decode_recovery_token(data.token)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    async with session.begin():
+        user = await user_repo.get_by_email(session, email=payload.email)
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="That email address is not registered",
+            )
+        user.set_password(data.new_password)
+    return {"msg": "Password updated successfully"}
