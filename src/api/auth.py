@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src import schemas
 from src.api import deps
-from src.infra import security
+from src.infra import email, security
 from src.infra.repo.user import user_repo
 from src.models.user import User
 
@@ -87,3 +87,38 @@ async def change_password(
     async with session.begin():
         current_user.set_password(data.new_password)
     return {"msg": "Password changed"}
+
+
+@router.post("/emails/request-verification")
+async def send_verify_email(
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    if current_user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified"
+        )
+    await email.send_verify_email(current_user.email)
+    return {"msg": "Verification email sent"}
+
+
+@router.post("/emails/confirm-verification")
+async def confirm_email_verification(
+    data: schemas.VerifyEmailTokenReq, db: AsyncSession = Depends(deps.get_db_session)
+) -> Any:
+    try:
+        payload = security.decode_verify_email_token(data.token)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    async with db.begin():
+        user = await user_repo.get_by_email(db, payload.email)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="User does not exist"
+            )
+        if user.email_verified:
+            return {"msg": "Email already verified"}
+        user.email_verified = True
+    return {"msg": "Email verified"}
