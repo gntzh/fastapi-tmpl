@@ -69,18 +69,40 @@ async def send_recovery_email(email: str) -> None:
     )
 
 
-async def send_verify_email(email: str) -> None:
+async def send_verify_email(email: str, name: str) -> None:
     project_name = settings.PROJECT_NAME
     token = create_verify_email_token(email)
     link = f"{settings.VERIFY_EMAIL_CALLBACK_URL}?token={token}"
     await send_general_email(
-        email,
+        f"{name} <{email}>",
         subject=f"[{project_name}] Verify Your Email",
         title="Verify your email address",
-        greeting="Hi,",
+        greeting=f"Hi, {name}",
         message=[
             f"To secure your {project_name} account, we just need to "
             f"verify your email address: {email}."
+        ],
+        cta_link=link,
+        cta_text="Verify Email",
+        secondary_message=[
+            "If you did not request this, you can simply ignore this message."
+        ],
+    )
+
+
+async def send_welcome_email(email: str, name: str) -> None:
+    project_name = settings.PROJECT_NAME
+    token = create_verify_email_token(email)
+    link = f"{settings.VERIFY_EMAIL_CALLBACK_URL}?token={token}"
+    title = f"Welcome to {project_name}"
+    await send_general_email(
+        f"{name} <{email}>",
+        subject=title,
+        title=title,
+        greeting=f"Hi, {name}",
+        message=[
+            f"Thanks for signing up to {project_name}! "
+            f"Please also take a moment to verify your email address: {email}."
         ],
         cta_link=link,
         cta_text="Verify Email",

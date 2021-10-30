@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src import schemas
 from src.api import deps
+from src.config import settings
 from src.infra import email, security
 from src.infra.repo.user import user_repo
 from src.models.user import User
@@ -24,6 +25,8 @@ async def register(
             raise HTTPException(status_code=400, detail="Username already registered")
         user = User.register(**data.dict())
         session.add(user)
+    if settings.EMAIL_ENABLED:
+        await email.send_welcome_email(user.email, user.username)
     return user
 
 
@@ -97,7 +100,7 @@ async def send_verify_email(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified"
         )
-    await email.send_verify_email(current_user.email)
+    await email.send_verify_email(current_user.email, current_user.username)
     return {"msg": "Verification email sent"}
 
 
