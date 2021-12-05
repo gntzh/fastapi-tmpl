@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     EMAIL_USE_TLS: bool = False
     EMAIL_USE_STARTTLS: bool = False
 
+    LOGGING_LEVEL: int = 20  # INFO
+
     @root_validator
     def check_smtp_tls_and_starttls(cls, values: dict[str, Any]):
         if values.get("EMAIL_USE_TLS") and values.get("EMAIL_USE_STARTTLS"):

@@ -3,6 +3,8 @@ from typing import Any
 
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader
+from loguru import logger
+
 
 from src.config import settings
 from src.infra.security import create_recovery_token, create_verify_email_token
@@ -39,7 +41,7 @@ async def send_general_email(
     msg["To"] = to
     msg.set_content(text)
     msg.add_alternative(html, subtype="html")
-    await aiosmtplib.send(
+    res = await aiosmtplib.send(
         msg,
         hostname=settings.EMAIL_HOST,
         port=settings.EMAIL_PORT,
@@ -48,6 +50,7 @@ async def send_general_email(
         use_tls=settings.EMAIL_USE_TLS,
         start_tls=settings.EMAIL_USE_STARTTLS,
     )
+    logger.info("send email result: {}", res)
 
 
 async def send_recovery_email(email: str) -> None:
