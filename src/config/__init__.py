@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     LOGGING_LEVEL: int = 20  # INFO
 
+    SENTRY_DSN: Union[str, None] = None
+
     @root_validator
     def check_smtp_tls_and_starttls(cls, values: dict[str, Any]):
         if values.get("EMAIL_USE_TLS") and values.get("EMAIL_USE_STARTTLS"):

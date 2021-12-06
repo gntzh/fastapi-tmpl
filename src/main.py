@@ -1,8 +1,10 @@
 import sys
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from src.api.router import router
 from src.config import settings
@@ -26,6 +28,9 @@ app = FastAPI(title="FastAPI Admin Template")
 async def cleanup_database():
     await dispose_db()
 
+
+sentry_sdk.init(settings.SENTRY_DSN)
+app.add_middleware(SentryAsgiMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
