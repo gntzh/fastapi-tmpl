@@ -2,21 +2,10 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from jose import jwt
-from passlib.context import CryptContext
 from pydantic import ValidationError
 
 from src.config import settings
 from src.schemas.auth import RecoveryTokenPayload, TokenPayload, VerifyEmailTokenPayload
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def verify_password(raw_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(raw_password, hashed_password)
-
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
 
 
 def create_access_token(

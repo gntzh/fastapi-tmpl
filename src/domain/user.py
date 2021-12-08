@@ -1,13 +1,14 @@
 import uuid
 
+from dependency_injector.wiring import Provide
 from sqlalchemy import Column, types
 
-from src.infra.security import hash_password, verify_password
 from src.libs.sa.timezone import TZDateTime
 from src.libs.sa.uuid import UUID
 from src.utils import utcnow
 
 from .mapper import Base
+from .services import PasswordHashService
 
 
 class User(Base):
@@ -20,11 +21,13 @@ class User(Base):
     date_joined = Column(TZDateTime, default=utcnow)
     is_superuser = Column(types.Boolean, default=False)
 
+    password_hash_service: PasswordHashService = Provide["password_hash_service"]
+
     def set_password(self, raw_password: str):
-        self.password = hash_password(raw_password)
+        self.password = self.password_hash_service.hash(raw_password)
 
     def verify_password(self, raw_password: str) -> bool:
-        return verify_password(raw_password, self.password)
+        return self.password_hash_service.verify(raw_password, self.password)
 
     @classmethod
     def _create_user(cls, username, email, password, **extra_fields) -> "User":
