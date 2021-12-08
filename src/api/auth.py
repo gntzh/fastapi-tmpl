@@ -1,5 +1,6 @@
 from typing import Any
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -15,8 +16,9 @@ router = APIRouter()
 
 
 @router.post("/", response_model=schemas.User)
+@inject
 async def register(
-    data: schemas.Register, session: AsyncSession = Depends(deps.get_db_session)
+    data: schemas.Register, session: AsyncSession = Depends(Provide["session"])
 ) -> Any:
     async with session.begin():
         if await user_repo.get_by_email(session, email=data.email):
@@ -31,8 +33,9 @@ async def register(
 
 
 @router.post("/token", response_model=schemas.LoginRes)
+@inject
 async def token(
-    db: AsyncSession = Depends(deps.get_db_session),
+    db: AsyncSession = Depends(Provide["session"]),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> Any:
     user = await user_repo.get_by_username(db, form_data.username)
@@ -50,10 +53,11 @@ async def token(
 
 
 @router.post("/token/refresh")
+@inject
 async def refresh_token(
     refresh_token: str = Body(...),
     token_type: str = Body("bearer"),
-    db: AsyncSession = Depends(deps.get_db_session),
+    db: AsyncSession = Depends(Provide["session"]),
 ) -> Any:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,10 +82,11 @@ async def refresh_token(
 
 
 @router.put("/password")
+@inject
 async def change_password(
     data: schemas.ChangePasswordData,
     current_user: User = Depends(deps.get_current_user),
-    session: AsyncSession = Depends(deps.get_db_session),
+    session: AsyncSession = Depends(Provide["session"]),
 ) -> Any:
     if not current_user.verify_password(data.old_password):
         raise HTTPException(
@@ -105,8 +110,9 @@ async def send_verify_email(
 
 
 @router.post("/emails/confirm-verification")
+@inject
 async def confirm_email_verification(
-    data: schemas.VerifyEmailTokenReq, db: AsyncSession = Depends(deps.get_db_session)
+    data: schemas.VerifyEmailTokenReq, db: AsyncSession = Depends(Provide["session"])
 ) -> Any:
     try:
         payload = security.decode_verify_email_token(data.token)
@@ -128,9 +134,10 @@ async def confirm_email_verification(
 
 
 @router.post("/recovery")
+@inject
 async def recover_account(
     data: schemas.RecoverPasswordData,
-    session: AsyncSession = Depends(deps.get_db_session),
+    session: AsyncSession = Depends(Provide["session"]),
 ) -> Any:
     user = await user_repo.get_by_email(session, email=data.email)
     if user is None:
@@ -143,9 +150,10 @@ async def recover_account(
 
 
 @router.post("/password/reset")
+@inject
 async def reset_password(
     data: schemas.ResetPasswordData,
-    session: AsyncSession = Depends(deps.get_db_session),
+    session: AsyncSession = Depends(Provide["session"]),
 ) -> Any:
     try:
         payload = security.decode_recovery_token(data.token)
