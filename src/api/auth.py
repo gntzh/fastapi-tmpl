@@ -10,7 +10,7 @@ from src.api import deps
 from src.config import settings
 from src.infra import email, security
 from src.infra.repo.user import user_repo
-from src.models.user import User
+from src.domain.user import User
 
 router = APIRouter()
 

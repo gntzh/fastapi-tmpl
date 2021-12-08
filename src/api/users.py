@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from src import schemas
 from src.api import deps
-from src.models.user import User
+from src.domain.user import User
 
 router = APIRouter()
 

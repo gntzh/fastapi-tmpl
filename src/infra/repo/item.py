@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.libs.sa.uuid import UUID
 
-from src.models.item import Item
+from src.domain.item import Item
 
 from .base import RepoBase
 

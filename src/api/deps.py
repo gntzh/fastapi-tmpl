@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.repo.user import user_repo
 from src.infra.security import decode_access_token
-from src.models.user import User
+from src.domain.user import User
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/auth/token")
 

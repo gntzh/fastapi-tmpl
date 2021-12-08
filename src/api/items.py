@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import schemas
 from src.infra.repo.item import item_repo
-from src.models.item import Item
-from src.models.user import User
+from src.domain.item import Item
+from src.domain.user import User
 
 from . import deps
 

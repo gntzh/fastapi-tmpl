@@ -1,5 +1,5 @@
-from src.models import Item, User  # noqa: F401
-from src.models.mapper import mapper_registry
+from src.domain import Item, User  # noqa: F401
+from src.domain.mapper import mapper_registry
 
 __all__ = ["metadata"]
 
