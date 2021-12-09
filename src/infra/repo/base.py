@@ -1,5 +1,6 @@
 from typing import Any, Generic, Protocol, Type, TypeVar
 
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,23 +12,34 @@ class ModelBase(Protocol):
         ...
 
 
+T = TypeVar("T")
+
 ModelT = TypeVar("ModelT", bound=ModelBase)
 
 
-class RepoBase(Generic[ModelT]):
-    def __init__(self, model: Type[ModelT]) -> None:
-        self.model = model
+class FactoryMixin:
+    def __call__(self: T, session: AsyncSession) -> T:
+        logger.debug("装填Item session")
+        self._session = session
+        return self
 
-    async def get(self, db: AsyncSession, /, id: Any) -> ModelT | None:
+
+class RepoBase(Generic[ModelT], FactoryMixin):
+    model: Type[ModelT]
+    _session: AsyncSession
+
+    async def get(self, /, id: Any) -> ModelT | None:
         return (
-            await db.execute(select(self.model).where(self.model.id == id))
+            await self._session.execute(select(self.model).where(self.model.id == id))
         ).scalar()
 
-    async def get_multi(
-        self, db: AsyncSession, /, offset: int = 0, limit: int = 100
-    ) -> list[ModelT]:
+    async def get_multi(self, /, offset: int = 0, limit: int = 100) -> list[ModelT]:
         return (
-            (await db.execute(select(self.model).offset(offset).limit(limit)))
+            (
+                await self._session.execute(
+                    select(self.model).offset(offset).limit(limit)
+                )
+            )
             .scalars()
             .all()
         )

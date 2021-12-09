@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from src import schemas
 from src.api import deps
 from src.config import settings
-from src.infra import email, security
-from src.infra.repo.user import user_repo
 from src.domain.user import User
+from src.infra import email, security
+from src.infra.repo.user import UserRepo
 
 router = APIRouter()
 
@@ -18,12 +18,14 @@ router = APIRouter()
 @router.post("/", response_model=schemas.User)
 @inject
 async def register(
-    data: schemas.Register, session: AsyncSession = Depends(Provide["session"])
+    data: schemas.Register,
+    session: AsyncSession = Depends(Provide["session"]),
+    user_repo: UserRepo = Depends(Provide["user_repo"]),
 ) -> Any:
     async with session.begin():
-        if await user_repo.get_by_email(session, email=data.email):
+        if await user_repo.get_by_email(email=data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
-        if await user_repo.get_by_username(session, username=data.username):
+        if await user_repo.get_by_username(username=data.username):
             raise HTTPException(status_code=400, detail="Username already registered")
         user = User.register(**data.dict())
         session.add(user)
@@ -35,10 +37,10 @@ async def register(
 @router.post("/token", response_model=schemas.LoginRes)
 @inject
 async def token(
-    db: AsyncSession = Depends(Provide["session"]),
+    user_repo: UserRepo = Depends(Provide["user_repo"]),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> Any:
-    user = await user_repo.get_by_username(db, form_data.username)
+    user = await user_repo.get_by_username(form_data.username)
     if not user:
         raise HTTPException(status_code=400, detail="User does not exist")
     if not user.verify_password(form_data.password):
@@ -58,6 +60,7 @@ async def refresh_token(
     refresh_token: str = Body(...),
     token_type: str = Body("bearer"),
     db: AsyncSession = Depends(Provide["session"]),
+    user_repo: UserRepo = Depends(Provide["user_repo"]),
 ) -> Any:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,7 +75,7 @@ async def refresh_token(
         raise credentials_exception
 
     async with db.begin():
-        user = await user_repo.get(db, id=payload.user_id)
+        user = await user_repo.get(id=payload.user_id)
     if user is None:
         raise credentials_exception
     return {
@@ -112,7 +115,9 @@ async def send_verify_email(
 @router.post("/emails/confirm-verification")
 @inject
 async def confirm_email_verification(
-    data: schemas.VerifyEmailTokenReq, db: AsyncSession = Depends(Provide["session"])
+    data: schemas.VerifyEmailTokenReq,
+    db: AsyncSession = Depends(Provide["session"]),
+    user_repo: UserRepo = Depends(Provide["user_repo"]),
 ) -> Any:
     try:
         payload = security.decode_verify_email_token(data.token)
@@ -122,7 +127,7 @@ async def confirm_email_verification(
             detail="Could not validate credentials",
         )
     async with db.begin():
-        user = await user_repo.get_by_email(db, payload.email)
+        user = await user_repo.get_by_email(payload.email)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="User does not exist"
@@ -138,8 +143,9 @@ async def confirm_email_verification(
 async def recover_account(
     data: schemas.RecoverPasswordData,
     session: AsyncSession = Depends(Provide["session"]),
+    user_repo: UserRepo = Depends(Provide["user_repo"]),
 ) -> Any:
-    user = await user_repo.get_by_email(session, email=data.email)
+    user = await user_repo.get_by_email(email=data.email)
     if user is None:
         raise HTTPException(
             status_code=404,
@@ -154,6 +160,7 @@ async def recover_account(
 async def reset_password(
     data: schemas.ResetPasswordData,
     session: AsyncSession = Depends(Provide["session"]),
+    user_repo: UserRepo = Depends(Provide["user_repo"]),
 ) -> Any:
     try:
         payload = security.decode_recovery_token(data.token)
@@ -163,7 +170,7 @@ async def reset_password(
             detail="Could not validate credentials",
         )
     async with session.begin():
-        user = await user_repo.get_by_email(session, email=payload.email)
+        user = await user_repo.get_by_email(email=payload.email)
         if user is None:
             raise HTTPException(
                 status_code=404,

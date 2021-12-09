@@ -4,6 +4,8 @@ from dependency_injector import containers, providers
 from passlib.context import CryptContext
 
 from src.config import Settings
+from src.infra.repo.item import ItemRepo
+from src.infra.repo.user import UserRepo
 
 from .infra.database import Database
 
@@ -26,3 +28,5 @@ class Container(containers.DeclarativeContainer):
     password_hash_service = providers.Singleton(
         CryptContext, schemes=["bcrypt"], deprecated=["auto"]
     )
+    item_repo = providers.Factory(ItemRepo(), session.provided)
+    user_repo = providers.Factory(UserRepo(), session.provided)

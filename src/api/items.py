@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import schemas
-from src.infra.repo.item import item_repo
 from src.domain.item import Item
 from src.domain.user import User
+from src.infra.repo.item import ItemRepo
 
 from . import deps
 
@@ -20,15 +20,17 @@ async def list_items(
     offset: int = 0,
     limit: int = 200,
     current_user: User = Depends(deps.get_current_user),
-    session: AsyncSession = Depends(Provide["session"]),
+    # session: AsyncSession = Depends(Provide["session"]),
+    item_repo: ItemRepo = Depends(Provide["item_repo"]),
 ) -> Any:
+    # logger.debug(item_repo)
+    # logger.debug(type(item_repo))
+    # logger.debug(getattr(item_repo, "_session"))
     print(current_user)
     if current_user.is_superuser:
-        items = await item_repo.get_multi(session, offset, limit)
+        items = await item_repo.get_multi(offset, limit)
     else:
-        items = await item_repo.get_multi_by_owner(
-            session, current_user.id, offset, limit
-        )
+        items = await item_repo.get_multi_by_owner(current_user.id, offset, limit)
     return items
 
 
@@ -51,9 +53,10 @@ async def retrieve_item(
     id: int,
     current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(Provide["session"]),
+    item_repo: ItemRepo = Depends(Provide["item_repo"]),
 ) -> Any:
     async with session.begin():
-        item = await item_repo.get(session, id=id)
+        item = await item_repo.get(id=id)
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
         if not current_user.is_superuser and (item.owner_id != current_user.id):
@@ -69,9 +72,10 @@ async def delete_item(
     id: int,
     current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(Provide["session"]),
+    item_repo: ItemRepo = Depends(Provide["item_repo"]),
 ) -> None:
     async with session.begin():
-        item = await item_repo.get(session, id=id)
+        item = await item_repo.get(id=id)
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
         if not current_user.is_superuser and (item.owner_id != current_user.id):
@@ -86,9 +90,10 @@ async def update_item(
     data: schemas.ItemUpdate,
     session: AsyncSession = Depends(Provide["session"]),
     current_user: User = Depends(deps.get_current_user),
+    item_repo: ItemRepo = Depends(Provide["item_repo"]),
 ) -> Any:
     async with session.begin():
-        item = await item_repo.get(session, id)
+        item = await item_repo.get(id)
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
         if not current_user.is_superuser and (item.owner_id != current_user.id):
