@@ -4,10 +4,9 @@ from dependency_injector import containers, providers
 from passlib.context import CryptContext
 
 from src.config import Settings
+from src.infra.database import Database
 from src.infra.repo.item import ItemRepo
 from src.infra.repo.user import UserRepo
-
-from .infra.database import Database
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession

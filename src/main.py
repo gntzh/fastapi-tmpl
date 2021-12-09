@@ -8,7 +8,6 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from src.api.router import router
 from src.config import settings
-from src.infra.db_session import dispose_db
 from src.shared.container import Container
 
 loggin_config = {
@@ -31,7 +30,6 @@ app.include_router(router)
 
 @app.on_event("shutdown")
 async def cleanup_database():
-    await dispose_db()
     await container.db().dispose_db()
 
 
