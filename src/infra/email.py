@@ -1,10 +1,9 @@
 from email.message import EmailMessage
-from typing import Any
+from typing import Any, Awaitable, Callable
 
-import aiosmtplib
+from dependency_injector.wiring import Provide
 from jinja2 import Environment, FileSystemLoader
 from loguru import logger
-
 
 from src.config import settings
 from src.infra.security import create_recovery_token, create_verify_email_token
@@ -12,6 +11,12 @@ from src.infra.security import create_recovery_token, create_verify_email_token
 env = Environment(
     loader=FileSystemLoader(settings.BASE_DIR / "src/templates/email"), autoescape=True
 )
+
+PROJECT_NAME: str = Provide["config.PROJECT_NAME"]
+
+send_message_P = Callable[[EmailMessage], Awaitable[Any]]
+
+send_message: send_message_P = Provide["send_message"]
 
 
 async def send_general_email(
@@ -41,15 +46,7 @@ async def send_general_email(
     msg["To"] = to
     msg.set_content(text)
     msg.add_alternative(html, subtype="html")
-    res = await aiosmtplib.send(
-        msg,
-        hostname=settings.EMAIL_HOST,
-        port=settings.EMAIL_PORT,
-        username=settings.EMAIL_USERNAME,
-        password=settings.EMAIL_PASSWORD,
-        use_tls=settings.EMAIL_USE_TLS,
-        start_tls=settings.EMAIL_USE_STARTTLS,
-    )
+    res = await send_message(msg)
     logger.info("send email result: {}", res)
 
 

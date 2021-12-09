@@ -7,3 +7,14 @@ class PasswordHashService(Protocol):
 
     def verify(self, plain_password: str, hashed_password: str) -> bool:
         ...
+
+
+class EmailService(Protocol):
+    async def send_welcome_email(self, email: str, name: str) -> None:
+        ...
+
+    async def send_verify_email(self, email: str, name: str) -> None:
+        ...
+
+    async def send_recovery_email(self, email: str) -> None:
+        ...

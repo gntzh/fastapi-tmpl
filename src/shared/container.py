@@ -1,9 +1,12 @@
+from email.message import EmailMessage
 from typing import TYPE_CHECKING
 
+import aiosmtplib
 from dependency_injector import containers, providers
 from passlib.context import CryptContext
 
 from src.config import Settings
+from src.infra import email
 from src.infra.database import Database
 from src.infra.repo.item import ItemRepo
 from src.infra.repo.user import UserRepo
@@ -19,6 +22,28 @@ async def session_resource(session_factory: "sessionmaker") -> "AsyncSession":
     await session.close()
 
 
+def send_message_factory(
+    hostname: str,
+    port: int,
+    username: str,
+    password: str,
+    use_tls: bool,
+    start_tls: bool,
+):
+    async def fn(message: "EmailMessage"):
+        return await aiosmtplib.send(
+            message,
+            hostname=hostname,
+            port=port,
+            username=username,
+            password=password,
+            use_tls=use_tls,
+            start_tls=start_tls,
+        )
+
+    return fn
+
+
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(packages=["src"], auto_wire=False)
     config = providers.Configuration(pydantic_settings=[Settings()])
@@ -29,3 +54,13 @@ class Container(containers.DeclarativeContainer):
     )
     item_repo = providers.Factory(ItemRepo(), session.provided)
     user_repo = providers.Factory(UserRepo(), session.provided)
+    send_message = providers.Singleton(
+        send_message_factory,
+        hostname=config.EMAIL_HOST,
+        port=config.EMAIL_PORT,
+        username=config.EMAIL_USERNAME,
+        password=config.EMAIL_PASSWORD,
+        use_tls=config.EMAIL_USE_TLS,
+        start_tls=config.EMAIL_USE_STARTTLS,
+    )
+    email_service = providers.Object(email)

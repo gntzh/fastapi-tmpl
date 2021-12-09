@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from src import schemas
 from src.api import deps
 from src.config import settings
+from src.domain.services import EmailService
 from src.domain.user import User
-from src.infra import email, security
+from src.infra import security
 from src.infra.repo.user import UserRepo
 
 router = APIRouter()
@@ -21,6 +22,7 @@ async def register(
     data: schemas.Register,
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
+    email_service: EmailService = Depends(Provide["email_service"]),
 ) -> Any:
     async with session.begin():
         if await user_repo.get_by_email(email=data.email):
@@ -30,7 +32,7 @@ async def register(
         user = User.register(**data.dict())
         session.add(user)
     if settings.EMAIL_ENABLED:
-        await email.send_welcome_email(user.email, user.username)
+        await email_service.send_welcome_email(user.email, user.username)
     return user
 
 
@@ -101,14 +103,16 @@ async def change_password(
 
 
 @router.post("/emails/request-verification")
+@inject
 async def send_verify_email(
     current_user: User = Depends(deps.get_current_user),
+    email_service: EmailService = Depends(Provide["email_service"]),
 ) -> Any:
     if current_user.email_verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified"
         )
-    await email.send_verify_email(current_user.email, current_user.username)
+    await email_service.send_verify_email(current_user.email, current_user.username)
     return {"msg": "Verification email sent"}
 
 
@@ -144,6 +148,7 @@ async def recover_account(
     data: schemas.RecoverPasswordData,
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
+    email_service: EmailService = Depends(Provide["email_service"]),
 ) -> Any:
     user = await user_repo.get_by_email(email=data.email)
     if user is None:
@@ -151,7 +156,7 @@ async def recover_account(
             status_code=404,
             detail="That email address is not registered",
         )
-    await email.send_recovery_email(user.email)
+    await email_service.send_recovery_email(user.email)
     return {"msg": "Recovery email sent"}
 
 
