@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from src import schemas
 from src.api import deps
 from src.config import settings
+from src.domain import services
 from src.domain.services import EmailService
 from src.domain.user import User
-from src.infra import security
 from src.infra.repo.user import UserRepo
 
 router = APIRouter()
@@ -23,6 +23,9 @@ async def register(
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
     email_service: EmailService = Depends(Provide["email_service"]),
+    verify_email_token_service: services.VerifyEmailTokenService = Depends(
+        Provide["verify_email_token_service"]
+    ),
 ) -> Any:
     async with session.begin():
         if await user_repo.get_by_email(email=data.email):
@@ -32,7 +35,13 @@ async def register(
         user = User.register(**data.dict())
         session.add(user)
     if settings.EMAIL_ENABLED:
-        await email_service.send_welcome_email(user.email, user.username)
+        await email_service.send_welcome_email(
+            user.email,
+            user.username,
+            verify_email_token_service.create(
+                services.VerifyEmailTokenPayload(email=data.email)
+            ),
+        )
     return user
 
 
@@ -41,6 +50,12 @@ async def register(
 async def token(
     user_repo: UserRepo = Depends(Provide["user_repo"]),
     form_data: OAuth2PasswordRequestForm = Depends(),
+    access_token_service: services.AccessTokenService = Depends(
+        Provide["access_token_service"]
+    ),
+    refresh_token_service: services.RefreshTokenService = Depends(
+        Provide["refresh_token_service"]
+    ),
 ) -> Any:
     user = await user_repo.get_by_username(form_data.username)
     if not user:
@@ -50,8 +65,12 @@ async def token(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return {
-        "access_token": security.create_access_token(user.id),
-        "refresh_token": security.create_refresh_token(user.id),
+        "access_token": access_token_service.create(
+            services.TokenPayload(user_id=user.id)
+        ),
+        "refresh_token": refresh_token_service.create(
+            services.TokenPayload(user_id=user.id)
+        ),
         "token_type": "bearer",
     }
 
@@ -63,6 +82,12 @@ async def refresh_token(
     token_type: str = Body("bearer"),
     db: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
+    access_token_service: services.AccessTokenService = Depends(
+        Provide["access_token_service"]
+    ),
+    refresh_token_service: services.RefreshTokenService = Depends(
+        Provide["refresh_token_service"]
+    ),
 ) -> Any:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,7 +97,7 @@ async def refresh_token(
     if token_type.lower() != "bearer":
         raise credentials_exception
     try:
-        payload = security.decode_refresh_token(refresh_token)
+        payload = refresh_token_service.decode(refresh_token)
     except ValueError:
         raise credentials_exception
 
@@ -82,7 +107,9 @@ async def refresh_token(
         raise credentials_exception
     return {
         "token_type": "bearer",
-        "access_token": security.create_access_token(payload.user_id),
+        "access_token": access_token_service.create(
+            services.TokenPayload(user_id=payload.user_id)
+        ),
     }
 
 
@@ -107,12 +134,21 @@ async def change_password(
 async def send_verify_email(
     current_user: User = Depends(deps.get_current_user),
     email_service: EmailService = Depends(Provide["email_service"]),
+    verify_email_token_service: services.VerifyEmailTokenService = Depends(
+        Provide["verify_email_token_service"]
+    ),
 ) -> Any:
     if current_user.email_verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified"
         )
-    await email_service.send_verify_email(current_user.email, current_user.username)
+    await email_service.send_verify_email(
+        current_user.email,
+        current_user.username,
+        token=verify_email_token_service.create(
+            services.VerifyEmailTokenPayload(email=current_user.email)
+        ),
+    )
     return {"msg": "Verification email sent"}
 
 
@@ -122,9 +158,12 @@ async def confirm_email_verification(
     data: schemas.VerifyEmailTokenReq,
     db: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
+    verify_email_token_service: services.VerifyEmailTokenService = Depends(
+        Provide["verify_email_token_service"]
+    ),
 ) -> Any:
     try:
-        payload = security.decode_verify_email_token(data.token)
+        payload = verify_email_token_service.decode(data.token)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -149,6 +188,9 @@ async def recover_account(
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
     email_service: EmailService = Depends(Provide["email_service"]),
+    recovery_token_service: services.RecoveryTokenService = Depends(
+        Provide["recovery_token_service"]
+    ),
 ) -> Any:
     user = await user_repo.get_by_email(email=data.email)
     if user is None:
@@ -156,7 +198,12 @@ async def recover_account(
             status_code=404,
             detail="That email address is not registered",
         )
-    await email_service.send_recovery_email(user.email)
+    await email_service.send_recovery_email(
+        user.email,
+        token=recovery_token_service.create(
+            services.RecoveryTokenPayload(email=data.email)
+        ),
+    )
     return {"msg": "Recovery email sent"}
 
 
@@ -166,9 +213,12 @@ async def reset_password(
     data: schemas.ResetPasswordData,
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
+    recovery_token_service: services.RecoveryTokenService = Depends(
+        Provide["recovery_token_service"]
+    ),
 ) -> Any:
     try:
-        payload = security.decode_recovery_token(data.token)
+        payload = recovery_token_service.decode(data.token)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

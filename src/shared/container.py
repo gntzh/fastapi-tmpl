@@ -6,7 +6,7 @@ from dependency_injector import containers, providers
 from passlib.context import CryptContext
 
 from src.config import Settings
-from src.infra import email
+from src.infra import email, security
 from src.infra.database import Database
 from src.infra.repo.item import ItemRepo
 from src.infra.repo.user import UserRepo
@@ -64,3 +64,27 @@ class Container(containers.DeclarativeContainer):
         start_tls=config.EMAIL_USE_STARTTLS,
     )
     email_service = providers.Object(email)
+    access_token_service = providers.Singleton(
+        security.AccessTokenService,
+        expire_minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES,
+        signing_key=config.SIGNING_KEY,
+        algorithm=config.JWT_ALGORITHM,
+    )
+    refresh_token_service = providers.Singleton(
+        security.RefreshTokenService,
+        expire_minutes=config.REFRESH_TOKEN_EXPIRE_MINUTES,
+        signing_key=config.SIGNING_KEY,
+        algorithm=config.JWT_ALGORITHM,
+    )
+    recovery_token_service = providers.Singleton(
+        security.RecoveryTokenService,
+        expire_minutes=config.RECOVERY_TOKEN_EXPIRE_MINUTES,
+        signing_key=config.SIGNING_KEY,
+        algorithm=config.JWT_ALGORITHM,
+    )
+    verify_email_token_service = providers.Singleton(
+        security.VerifyEmailTokenService,
+        expire_minutes=config.VERIFY_EMAIL_TOKEN_EXPIRE_MINUTES,
+        signing_key=config.SIGNING_KEY,
+        algorithm=config.JWT_ALGORITHM,
+    )

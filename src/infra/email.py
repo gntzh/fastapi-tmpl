@@ -6,7 +6,6 @@ from jinja2 import Environment, FileSystemLoader
 from loguru import logger
 
 from src.config import settings
-from src.infra.security import create_recovery_token, create_verify_email_token
 
 env = Environment(
     loader=FileSystemLoader(settings.BASE_DIR / "src/templates/email"), autoescape=True
@@ -50,9 +49,8 @@ async def send_general_email(
     logger.info("send email result: {}", res)
 
 
-async def send_recovery_email(email: str) -> None:
+async def send_recovery_email(email: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
-    token = create_recovery_token(email)
     link = f"{settings.RECOVERY_CALLBACK_URL}?token={token}"
     await send_general_email(
         email,
@@ -69,9 +67,8 @@ async def send_recovery_email(email: str) -> None:
     )
 
 
-async def send_verify_email(email: str, name: str) -> None:
+async def send_verify_email(email: str, name: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
-    token = create_verify_email_token(email)
     link = f"{settings.VERIFY_EMAIL_CALLBACK_URL}?token={token}"
     await send_general_email(
         f"{name} <{email}>",
@@ -90,9 +87,8 @@ async def send_verify_email(email: str, name: str) -> None:
     )
 
 
-async def send_welcome_email(email: str, name: str) -> None:
+async def send_welcome_email(email: str, name: str, token: str) -> None:
     project_name = settings.PROJECT_NAME
-    token = create_verify_email_token(email)
     link = f"{settings.VERIFY_EMAIL_CALLBACK_URL}?token={token}"
     title = f"Welcome to {project_name}"
     await send_general_email(

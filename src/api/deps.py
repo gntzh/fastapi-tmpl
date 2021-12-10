@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infra.security import decode_access_token
+from src.domain import services
 from src.domain.user import User
 from src.infra.repo.user import UserRepo
 
@@ -15,9 +15,12 @@ async def get_current_user(
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
     token: str = Depends(reusable_oauth2),
+    access_token_service: services.AccessTokenService = Depends(
+        Provide["access_token_service"]
+    ),
 ) -> User:
     try:
-        payload = decode_access_token(token)
+        payload = access_token_service.decode(token)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

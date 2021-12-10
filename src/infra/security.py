@@ -1,111 +1,73 @@
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Generic, Type, TypeVar
 
+from fastapi.encoders import jsonable_encoder
 from jose import jwt
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
-from src.config import settings
-from src.schemas.auth import RecoveryTokenPayload, TokenPayload, VerifyEmailTokenPayload
+from src.domain import services
 
-
-def create_access_token(
-    user_id: Any,
-) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode(
-        {
-            "exp": expire,
-            "user_id": str(user_id),
-            "type": "access",
-        },
-        settings.SIGNING_KEY,
-        algorithm=settings.JWT_ALGORITHM,
-    )
+payload_T = TypeVar("payload_T", bound=BaseModel)
 
 
-def create_refresh_token(user_id: Any) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode(
-        {
-            "exp": expire,
-            "user_id": str(user_id),
-            "type": "refresh",
-        },
-        settings.SIGNING_KEY,
-        algorithm=settings.JWT_ALGORITHM,
-    )
+class TokenServiceBase(Generic[payload_T]):
+    token_type: str | None = None
+    payload_model: Type[payload_T]
 
+    def __init__(
+        self,
+        expire_minutes: int,
+        algorithm: str,
+        signing_key: str,
+        verifying_key: str = None,
+    ) -> None:
+        self.expire_minutes = expire_minutes
+        self.signing_key = signing_key
+        self.algorithm = algorithm
+        self.verifying_key = verifying_key
 
-def create_recovery_token(email: str) -> str:
-    expire = datetime.utcnow() + timedelta(
-        minutes=settings.RECOVERY_TOKEN_EXPIRE_MINUTES
-    )
-    return jwt.encode(
-        {
-            "exp": expire,
-            "email": email,
-            "type": "recovery",
-        },
-        settings.SIGNING_KEY,
-        algorithm=settings.JWT_ALGORITHM,
-    )
+    def create(self, payload: payload_T):
+        claims = jsonable_encoder(payload)
+        expire = datetime.utcnow() + timedelta(minutes=self.expire_minutes)
+        claims["type"] = self.token_type
+        claims["exp"] = expire
+        return jwt.encode(claims, self.signing_key, algorithm=self.algorithm)
 
-
-def create_verify_email_token(email: str) -> str:
-    expire = datetime.utcnow() + timedelta(
-        minutes=settings.VERIFY_EMAIL_TOKEN_EXPIRE_MINUTES
-    )
-    return jwt.encode(
-        {
-            "exp": expire,
-            "email": email,
-            "type": "verify_email",
-        },
-        settings.SIGNING_KEY,
-        algorithm=settings.JWT_ALGORITHM,
-    )
-
-
-def _decode_token(token: str, type: str = None) -> dict:
-    try:
-        claims = jwt.decode(
-            token,
-            settings.VERIFYING_KEY or settings.SIGNING_KEY,
-            algorithms=settings.JWT_ALGORITHM,
-        )
-    except jwt.ExpiredSignatureError as e:
-        raise ValueError("Expired token") from e
-    except jwt.JWTError as e:
-        raise ValueError("Invalid token") from e
-    if type is not None:
-        if claims.get("type") != type:
+    def decode(self, token: str) -> payload_T:
+        try:
+            claims = jwt.decode(
+                token,
+                self.verifying_key or self.signing_key,
+                algorithms=self.algorithm,
+            )
+        except jwt.ExpiredSignatureError as e:
+            raise ValueError("Expired token") from e
+        except jwt.JWTError as e:
+            raise ValueError("Invalid token") from e
+        if claims.get("type") != self.token_type:
             raise ValueError("Invalid type")
-    return claims
+        try:
+            payload = self.payload_model(**claims)
+        except ValidationError as e:
+            raise ValueError("Invalid token") from e
+        return payload
 
 
-def decode_access_token(token: str) -> TokenPayload:
-    try:
-        return TokenPayload(**_decode_token(token, "access"))
-    except ValidationError as e:
-        raise ValueError("Invalid token") from e
+class AccessTokenService(TokenServiceBase[services.TokenPayload]):
+    token_type = "access"
+    payload_model = services.TokenPayload
 
 
-def decode_refresh_token(token: str) -> TokenPayload:
-    try:
-        return TokenPayload(**_decode_token(token, "refresh"))
-    except ValidationError as e:
-        raise ValueError("Invalid token") from e
+class RefreshTokenService(TokenServiceBase[services.TokenPayload]):
+    token_type = "refresh"
+    payload_model = services.TokenPayload
 
 
-def decode_recovery_token(token: str) -> RecoveryTokenPayload:
-    try:
-        return RecoveryTokenPayload(**_decode_token(token, "recovery"))
-    except ValidationError as e:
-        raise ValueError("Invalid token") from e
+class RecoveryTokenService(TokenServiceBase[services.RecoveryTokenPayload]):
+    token_type = "recovery"
+    payload_model = services.RecoveryTokenPayload
 
 
-def decode_verify_email_token(token: str) -> VerifyEmailTokenPayload:
-    try:
-        return VerifyEmailTokenPayload(**_decode_token(token, "verify_email"))
-    except ValidationError as e:
-        raise ValueError("Invalid token") from e
+class VerifyEmailTokenService(TokenServiceBase[services.VerifyEmailTokenPayload]):
+    token_type = "verify_email"
+    payload_model = services.VerifyEmailTokenPayload
