@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, root_validator, validator
+from pydantic import AnyHttpUrl, BaseSettings, root_validator
 
 BASE_DIR: Path = Path(__file__).resolve(strict=True).parent.parent.parent
 
@@ -23,7 +23,6 @@ class Settings(BaseSettings):
     VERIFY_EMAIL_CALLBACK_URL: Union[AnyHttpUrl, None] = None
     RECOVERY_CALLBACK_URL: Union[AnyHttpUrl, None] = None
 
-    EMAIL_ENABLED: bool = False
     EMAIL_DEFAULT_FROM: Union[str, None] = None
     EMAIL_HOST: str = "localhost"
     EMAIL_PORT: Union[int, None] = None

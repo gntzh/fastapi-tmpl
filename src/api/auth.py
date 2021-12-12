@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src import schemas
 from src.api import deps
-from src.config import settings
 from src.domain import services
 from src.domain.services import EmailService
 from src.domain.user import User
@@ -34,14 +33,13 @@ async def register(
             raise HTTPException(status_code=400, detail="Username already registered")
         user = User.register(**data.dict())
         session.add(user)
-    if settings.EMAIL_ENABLED:
-        await email_service.send_welcome_email(
-            user.email,
-            user.username,
-            verify_email_token_service.create(
-                services.VerifyEmailTokenPayload(email=data.email)
-            ),
-        )
+    await email_service.send_welcome_email(
+        user.email,
+        user.username,
+        verify_email_token_service.create(
+            services.VerifyEmailTokenPayload(email=data.email)
+        ),
+    )
     return user
 
 
