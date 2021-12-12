@@ -1,7 +1,5 @@
-from email.message import EmailMessage
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncIterator
 
-import aiosmtplib
 from dependency_injector import containers, providers
 from passlib.context import CryptContext
 
@@ -16,32 +14,12 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import sessionmaker
 
 
-async def session_resource(session_factory: "sessionmaker") -> "AsyncSession":
+async def session_resource(
+    session_factory: "sessionmaker",
+) -> AsyncIterator["AsyncSession"]:
     session: "AsyncSession" = session_factory()
     yield session
     await session.close()
-
-
-def send_message_factory(
-    hostname: str,
-    port: int,
-    username: str,
-    password: str,
-    use_tls: bool,
-    start_tls: bool,
-):
-    async def fn(message: "EmailMessage"):
-        return await aiosmtplib.send(
-            message,
-            hostname=hostname,
-            port=port,
-            username=username,
-            password=password,
-            use_tls=use_tls,
-            start_tls=start_tls,
-        )
-
-    return fn
 
 
 class Container(containers.DeclarativeContainer):
@@ -54,8 +32,8 @@ class Container(containers.DeclarativeContainer):
     )
     item_repo = providers.Factory(ItemRepo(), session.provided)
     user_repo = providers.Factory(UserRepo(), session.provided)
-    send_message = providers.Singleton(
-        send_message_factory,
+    email_sender = providers.Singleton(
+        email.SMTPEmailSender,
         hostname=config.EMAIL_HOST,
         port=config.EMAIL_PORT,
         username=config.EMAIL_USERNAME,
@@ -63,7 +41,7 @@ class Container(containers.DeclarativeContainer):
         use_tls=config.EMAIL_USE_TLS,
         start_tls=config.EMAIL_USE_STARTTLS,
     )
-    email_service = providers.Object(email)
+    email_service = providers.Singleton(email.EmailService, email_sender.provided)
     access_token_service = providers.Singleton(
         security.AccessTokenService,
         expire_minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES,
