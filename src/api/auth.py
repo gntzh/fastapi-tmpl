@@ -15,7 +15,7 @@ from src.infra.repo.user import UserRepo
 router = APIRouter()
 
 
-@router.post("/", response_model=schemas.User)
+@router.post("/register/", response_model=schemas.User)
 @inject
 async def register(
     data: schemas.Register,
@@ -43,7 +43,7 @@ async def register(
     return user
 
 
-@router.post("/token", response_model=schemas.LoginRes)
+@router.post("/token/", response_model=schemas.LoginRes)
 @inject
 async def token(
     user_repo: UserRepo = Depends(Provide["user_repo"]),
@@ -73,7 +73,7 @@ async def token(
     }
 
 
-@router.post("/token/refresh")
+@router.post("/token/refresh/")
 @inject
 async def refresh_token(
     refresh_token: str = Body(...),
@@ -111,7 +111,7 @@ async def refresh_token(
     }
 
 
-@router.put("/password")
+@router.put("/password/")
 @inject
 async def change_password(
     data: schemas.ChangePasswordData,
@@ -127,7 +127,7 @@ async def change_password(
     return {"msg": "Password changed"}
 
 
-@router.post("/emails/request-verification")
+@router.post("/emails/request-verification/")
 @inject
 async def send_verify_email(
     current_user: User = Depends(deps.get_current_user),
@@ -150,7 +150,7 @@ async def send_verify_email(
     return {"msg": "Verification email sent"}
 
 
-@router.post("/emails/confirm-verification")
+@router.post("/emails/confirm-verification/")
 @inject
 async def confirm_email_verification(
     data: schemas.VerifyEmailTokenReq,
@@ -179,7 +179,7 @@ async def confirm_email_verification(
     return {"msg": "Email verified"}
 
 
-@router.post("/recovery")
+@router.post("/recovery/")
 @inject
 async def recover_account(
     data: schemas.RecoverPasswordData,
@@ -205,7 +205,7 @@ async def recover_account(
     return {"msg": "Recovery email sent"}
 
 
-@router.post("/password/reset")
+@router.post("/password/reset/")
 @inject
 async def reset_password(
     data: schemas.ResetPasswordData,

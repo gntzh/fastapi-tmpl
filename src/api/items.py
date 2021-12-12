@@ -47,7 +47,7 @@ async def create_item(
     return item
 
 
-@router.get("/{id:int}", response_model=schemas.Item)
+@router.get("/{id:int}/", response_model=schemas.Item)
 @inject
 async def retrieve_item(
     id: int,
@@ -65,7 +65,7 @@ async def retrieve_item(
 
 
 @router.delete(
-    "/{id:int}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response
+    "/{id:int}/", status_code=status.HTTP_204_NO_CONTENT, response_class=Response
 )
 @inject
 async def delete_item(
@@ -83,7 +83,7 @@ async def delete_item(
         await session.delete(item)
 
 
-@router.patch("/{id:int}", response_model=schemas.Item)
+@router.patch("/{id:int}/", response_model=schemas.Item)
 @inject
 async def update_item(
     id: int,
