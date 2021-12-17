@@ -94,14 +94,14 @@ async def test_user(global_session: AsyncSession) -> User:
 
 
 @pytest.fixture(scope="session")
-async def test_superuser(session: AsyncSession) -> User:
-    async with session.begin():
+async def test_superuser(global_session: AsyncSession) -> User:
+    async with global_session.begin():
         user = User.create_superuser(
             username="test_superuser",
             email="test_superuser@example.com",
             password="test_superuser",
         )
-        session.add(user)
+        global_session.add(user)
     return user
 
 
