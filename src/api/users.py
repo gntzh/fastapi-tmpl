@@ -126,7 +126,7 @@ async def set_password(
 )
 @inject
 async def delete_user(
-    id: int,
+    id: UUID,
     session: AsyncSession = Depends(Provide["session"]),
     user_repo: UserRepo = Depends(Provide["user_repo"]),
     superuser: User = Depends(deps.get_current_superuser),
