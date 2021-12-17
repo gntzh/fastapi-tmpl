@@ -1,20 +1,13 @@
-from uuid import UUID
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.user import User
-from .base import FactoryMixin
+from .base import RepoBase
 
 
-class UserRepo(FactoryMixin):
+class UserRepo(RepoBase[User]):
     model = User
     _session: AsyncSession
-
-    async def get(self, /, id: UUID) -> User | None:
-        return (
-            await self._session.execute(select(self.model).filter_by(id=id))
-        ).scalar()
 
     async def get_by_username(self, /, username: str) -> User | None:
         return (

@@ -1,3 +1,4 @@
+from typing import Generic, TypeVar
 from .auth import (  # noqa: F401
     ChangePasswordData,
     LoginRes,
@@ -8,4 +9,19 @@ from .auth import (  # noqa: F401
     VerifyEmailTokenReq,
 )
 from .item import Item, ItemCreate, ItemUpdate  # noqa: F401
-from .user import User, UserInDB  # noqa: F401
+from .user import (  # noqa: F401
+    SetPasswordData,
+    UpdateProfileData,
+    User,
+    UserCreate,
+    UserInDB,
+    UserUpdate,
+)
+from pydantic.generics import GenericModel
+
+T = TypeVar("T")
+
+
+class ListResult(GenericModel, Generic[T]):
+    items: list[T]
+    total_count: int

@@ -1,7 +1,7 @@
 from typing import Any, Generic, Protocol, Type, TypeVar
 
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -42,4 +42,11 @@ class RepoBase(Generic[ModelT], FactoryMixin):
             )
             .scalars()
             .all()
+        )
+
+    async def count(self) -> int:
+        return (
+            (await self._session.execute(select(func.count(self.model.id))))
+            .scalars()
+            .one()
         )
