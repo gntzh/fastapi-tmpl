@@ -9,6 +9,11 @@ BASE_DIR: Path = Path(__file__).resolve(strict=True).parent.parent.parent
 class Settings(BaseSettings):
     PROJECT_NAME: str
     BASE_DIR = BASE_DIR
+
+    FIRST_SUPERUSER_USERNAME: str = "admin"
+    FIRST_SUPERUSER_EMAIL: str
+    FIRST_SUPERUSER_PASSWORD: str
+
     SQLALCHEMY_DATABASE_URI: str
     CORS_ALLOWED_ORIGINS: list[AnyHttpUrl]
 
