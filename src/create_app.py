@@ -47,4 +47,9 @@ def create_app(container: Container) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.get("/test/sentry", tags=["test"])
+    def test_sentry(a: int, b: int):
+        return {"result": a / b}
+
     return app
