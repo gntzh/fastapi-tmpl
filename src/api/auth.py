@@ -127,7 +127,7 @@ async def change_password(
     return {"msg": "Password changed"}
 
 
-@router.post("/emails/request-verification/")
+@router.get("/emails/request-verification/")
 @inject
 async def send_verify_email(
     current_user: User = Depends(deps.get_current_user),
