@@ -7,7 +7,7 @@ from src.domain import services
 from src.domain.user import User
 from src.infra.repo.user import UserRepo
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="auth/token")
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="auth/token/")
 
 
 @inject
