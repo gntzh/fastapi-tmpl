@@ -66,6 +66,7 @@ async def create_user(
         user = User(**data.dict())
         user.set_password(data.password)
         session.add(user)
+        return user
 
 
 @router.get("/{id:uuid}/", response_model=schemas.UserInDB)
@@ -77,10 +78,10 @@ async def retrieve_user(
     superuser: User = Depends(deps.get_current_superuser),
 ) -> Any:
     async with session.begin():
-        item = await user_repo.get(id=id)
-        if not item:
+        user = await user_repo.get(id=id)
+        if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return item
+        return user
 
 
 @router.patch("/{id:uuid}/", response_model=schemas.UserInDB)
